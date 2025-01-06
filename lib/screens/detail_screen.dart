@@ -4,7 +4,7 @@ import '../models/scraping_item.dart';
 import '../services/scraping_service.dart';
 
 class DetailScreen extends StatefulWidget {
-  const DetailScreen({super.key});
+  const DetailScreen({Key? key}) : super(key: key);
 
   @override
   State<DetailScreen> createState() => _DetailScreenState();
@@ -12,17 +12,17 @@ class DetailScreen extends StatefulWidget {
 
 class _DetailScreenState extends State<DetailScreen> {
   final _scrapingService = ScrapingService();
-  String? _content;
-  String? _status;
+  ScrapingItem? _currentItem;
   Timer? _timer;
   bool _isLoading = true;
-  late ScrapingItem _item;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _item = ModalRoute.of(context)!.settings.arguments as ScrapingItem;
+      final ScrapingItem item = ModalRoute.of(context)!.settings.arguments as ScrapingItem;
+      _currentItem = item;
       _startPolling();
     });
   }
@@ -34,174 +34,104 @@ class _DetailScreenState extends State<DetailScreen> {
   }
 
   void _startPolling() {
+    // Initial fetch
+    _fetchResults();
+
+    // Set up periodic polling
     _timer = Timer.periodic(const Duration(seconds: 10), (timer) {
       _fetchResults();
     });
-    _fetchResults(); // Initial fetch
   }
 
   Future<void> _fetchResults() async {
+    if (_currentItem?.id == null) return;
+
     try {
-      final results = await _scrapingService.getScrapingResults(_item.id!);
+      final updatedItem = await _scrapingService.getScrapingResults(_currentItem!.id!);
       if (mounted) {
         setState(() {
-          _content = results['content'];
-          _status = results['status'];
+          _currentItem = updatedItem;
           _isLoading = false;
+          _error = null;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
+          _error = e.toString();
           _isLoading = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error fetching results: $e')),
-        );
       }
-    }
-  }
-
-  void _copyToClipboard() {
-    if (_content != null && _content!.isNotEmpty) {
-      // Implement clipboard functionality
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Content copied to clipboard')),
-      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final ScrapingItem item = ModalRoute.of(context)!.settings.arguments as ScrapingItem;
+    if (_currentItem == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(item.title),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () async {
-              final result = await Navigator.pushNamed(
-                context,
-                '/edit',
-                arguments: item,
-              );
-              if (result == true) {
-                _fetchResults();
-              }
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.copy),
-            onPressed: _copyToClipboard,
-          ),
-        ],
+        title: Text(_currentItem!.title),
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            color: Colors.white,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.title,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'URL: ${item.url}',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Method: ${item.method}',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Interval: ${item.interval} seconds',
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : RefreshIndicator(
-              onRefresh: _fetchResults,
-              child: ListView(
+      body: RefreshIndicator(
+        onRefresh: _fetchResults,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Card(
+              child: Padding(
                 padding: const EdgeInsets.all(16),
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.shade200),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Status: ${_currentItem!.status ?? "Unknown"}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Status: ${_status ?? "Unknown"}',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            if (_status == 'done')
-                              Text(
-                                'Last update: ${DateTime.now().hour}:${DateTime.now().minute}',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        if (_content == null || _content!.isEmpty)
-                          Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(32),
-                              child: Text(
-                                _status == 'scraping'
-                                    ? 'Scraping in progress...'
-                                    : 'No data available',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ),
-                          )
-                        else
-                          Text(_content!),
-                      ],
+                    const SizedBox(height: 8),
+                    Text('URL: ${_currentItem!.url}'),
+                    Text('Method: ${_currentItem!.method}'),
+                    Text('Selector: ${_currentItem!.selector}'),
+                    if (_currentItem!.lastUpdated != null)
+                      Text('Last Updated: ${_formatDateTime(_currentItem!.lastUpdated!)}'),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Content:',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    if (_isLoading)
+                      const Center(child: CircularProgressIndicator())
+                    else if (_error != null)
+                      Text(
+                        'Error: $_error',
+                        style: const TextStyle(color: Colors.red),
+                      )
+                    else if (_currentItem!.content?.isEmpty ?? true)
+                        const Text('No content available')
+                      else
+                        Text(_currentItem!.content!),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    return '${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
 }

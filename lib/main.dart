@@ -4,7 +4,7 @@ import 'screens/create_screen.dart';
 import 'screens/detail_screen.dart';
 import 'screens/edit_screen.dart';
 
-void main() {
+void main() async{
   runApp(const MyApp());
 }
 

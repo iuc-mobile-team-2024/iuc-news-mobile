@@ -3,7 +3,7 @@ import '../models/scraping_item.dart';
 import '../services/scraping_service.dart';
 
 class CreateScreen extends StatefulWidget {
-  const CreateScreen({super.key});
+  const CreateScreen({Key? key}) : super(key: key);
 
   @override
   CreateScreenState createState() => CreateScreenState();

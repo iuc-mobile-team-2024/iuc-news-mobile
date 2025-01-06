@@ -20,6 +20,7 @@ class ScrapingItem {
   String? content;
   List<ScrapingResult>? results;
   DateTime? lastUpdated;
+  String? error;
 
   ScrapingItem({
     this.id,
@@ -33,6 +34,7 @@ class ScrapingItem {
     this.content,
     this.results,
     this.lastUpdated,
+    this.error,
   });
 
   Map<String, dynamic> toJson() {
@@ -59,6 +61,7 @@ class ScrapingItem {
       lastUpdated: json['updated_time'] != null
           ? DateTime.fromMillisecondsSinceEpoch(json['updated_time'] * 1000)
           : null,
+      error: json['error'],
     );
   }
 }
