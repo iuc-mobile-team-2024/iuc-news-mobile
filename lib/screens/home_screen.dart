@@ -1,50 +1,97 @@
 import 'package:flutter/material.dart';
-import '../widgets/scraping_card.dart';
 import '../models/scraping_item.dart';
+import '../services/scraping_service.dart';
+import '../widgets/scraping_card.dart';
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({Key? key}) : super(key: key);
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final _scrapingService = ScrapingService();
+  List<ScrapingItem> _scrapingItems = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchScrapingItems();
+  }
+
+  Future<void> _fetchScrapingItems() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+
+      final response = await _scrapingService.getScrapingRequests();
+
+      if (mounted) {
+        setState(() {
+          _scrapingItems = response;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Failed to load scraping requests: $e';
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Sample data
-    final List<ScrapingItem> items = [
-      ScrapingItem(
-        title: 'İstanbul Üniversitesi Duyurular',
-        url: 'https://iuc.edu.tr/tr/duyurular/1/1',
-        method: 'XPath',
-        selector: '/html/body/div[1]/div[2]/div',
-        interval: 3600,
-        createdAt: DateTime.now().subtract(const Duration(days: 3)),
-      ),
-      // Add more sample items...
-    ];
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Kazıma İstekleri',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => Navigator.pushNamed(context, '/create'),
-          ),
-        ],
+        title: const Text('Scraping Requests'),
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: items.length,
-        itemBuilder: (context, index) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: ScrapingCard(item: items[index]),
-          );
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _error != null
+          ? Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(_error!),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _fetchScrapingItems,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      )
+          : RefreshIndicator(
+        onRefresh: _fetchScrapingItems,
+        child: _scrapingItems.isEmpty
+            ? const Center(
+          child: Text('No scraping requests found'),
+        )
+            : ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: _scrapingItems.length,
+          itemBuilder: (context, index) {
+            return ScrapingCard(item: _scrapingItems[index]);
+          },
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final result = await Navigator.pushNamed(context, '/create');
+          if (result != null) {
+            _fetchScrapingItems();
+          }
         },
+        backgroundColor: Colors.green,
+        child: const Icon(Icons.add),
       ),
     );
   }
