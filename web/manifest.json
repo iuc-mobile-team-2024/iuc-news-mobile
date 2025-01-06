@@ -1,6 +1,6 @@
 {
-    "name": "iuc_news_app",
-    "short_name": "iuc_news_app",
+    "name": "iuc_news_frontend",
+    "short_name": "iuc_news_frontend",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

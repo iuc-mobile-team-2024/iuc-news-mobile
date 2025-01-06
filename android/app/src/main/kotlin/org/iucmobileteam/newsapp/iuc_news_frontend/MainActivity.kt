@@ -1,4 +1,4 @@
-package com.example.iuc_news_app
+package org.iucmobileteam.newsapp.iuc_news_frontend
 
 import io.flutter.embedding.android.FlutterActivity
 
