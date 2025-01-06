@@ -5,9 +5,9 @@ class ScrapingCard extends StatelessWidget {
   final ScrapingItem item;
 
   const ScrapingCard({
-    super.key,
+    Key? key,
     required this.item,
-  });
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +44,7 @@ class ScrapingCard extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                '${item.createdAt.difference(DateTime.now()).inDays.abs()} gün önce oluşturuldu.',
+                '${item.createdAt.difference(DateTime.now()).inDays.abs()} days ago',
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey[600],

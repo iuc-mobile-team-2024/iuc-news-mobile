@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/scraping_item.dart';
 
 class EditScreen extends StatefulWidget {
-  const EditScreen({super.key});
+  const EditScreen({Key? key}) : super(key: key);
 
   @override
   EditScreenState createState() => EditScreenState();
