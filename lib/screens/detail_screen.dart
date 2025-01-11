@@ -45,20 +45,24 @@ class _DetailScreenState extends State<DetailScreen> {
       final results = await _scrapingService.getScrapingResults(_item.id!);
       if (mounted) {
         setState(() {
-          _content = results['content'];
-          _status = results['status'];
+          _content = results.content;
+          _status = results.status;
           _isLoading = false;
         });
       }
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error fetching results: $e')),
-        );
-      }
+      _handleError('An unexpected error occurred: $e');
+    }
+  }
+
+  void _handleError(String message) {
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
     }
   }
 

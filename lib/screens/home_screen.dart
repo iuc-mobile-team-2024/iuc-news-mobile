@@ -4,7 +4,7 @@ import '../services/scraping_service.dart';
 import '../widgets/scraping_card.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -14,7 +14,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final _scrapingService = ScrapingService();
   List<ScrapingItem> _scrapingItems = [];
   bool _isLoading = true;
-  String? _error;
+  bool _hasError = false;
 
   @override
   void initState() {
@@ -26,7 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       setState(() {
         _isLoading = true;
-        _error = null;
+        _hasError = false;
       });
 
       final response = await _scrapingService.getScrapingRequests();
@@ -40,7 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _error = 'Failed to load scraping requests: $e';
+          _hasError = true;
           _isLoading = false;
         });
       }
@@ -55,34 +55,26 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _error != null
-          ? Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(_error!),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _fetchScrapingItems,
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
-      )
           : RefreshIndicator(
-        onRefresh: _fetchScrapingItems,
-        child: _scrapingItems.isEmpty
-            ? const Center(
-          child: Text('No scraping requests found'),
-        )
-            : ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: _scrapingItems.length,
-          itemBuilder: (context, index) {
-            return ScrapingCard(item: _scrapingItems[index]);
-          },
-        ),
-      ),
+              onRefresh: _fetchScrapingItems,
+              child: _scrapingItems.isEmpty || _hasError
+                  ? const Center(
+                      child: Text(
+                        'Data not found.',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: _scrapingItems.length,
+                      itemBuilder: (context, index) {
+                        return ScrapingCard(item: _scrapingItems[index]);
+                      },
+                    ),
+            ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           final result = await Navigator.pushNamed(context, '/create');

@@ -5,9 +5,9 @@ class ResultCard extends StatelessWidget {
   final ScrapingResult result;
 
   const ResultCard({
-    Key? key,
+    super.key,
     required this.result,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
