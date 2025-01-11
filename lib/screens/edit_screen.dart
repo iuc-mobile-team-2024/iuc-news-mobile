@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/scraping_item.dart';
+import '../services/scraping_service.dart';
 
 class EditScreen extends StatefulWidget {
-  const EditScreen({Key? key}) : super(key: key);
+  const EditScreen({super.key});
 
   @override
   EditScreenState createState() => EditScreenState();
@@ -15,6 +16,7 @@ class EditScreenState extends State<EditScreen> {
   late TextEditingController _selectorController;
   late TextEditingController _intervalController;
   late String _selectedMethod;
+  final _scrapingService = ScrapingService();
 
   @override
   void didChangeDependencies() {
@@ -36,11 +38,28 @@ class EditScreenState extends State<EditScreen> {
     super.dispose();
   }
 
+  Future<void> _saveChanges() async {
+    if (_formKey.currentState?.validate() ?? false) {
+      final ScrapingItem updatedItem = ScrapingItem(
+        id: (ModalRoute.of(context)!.settings.arguments as ScrapingItem).id,
+        title: _titleController.text,
+        url: _urlController.text,
+        selector: _selectorController.text,
+        interval: int.parse(_intervalController.text),
+        method: _selectedMethod,
+        createdAt: DateTime.now(),
+      );
+
+      await _scrapingService.updateScrapingItem(updatedItem);
+      Navigator.pop(context, true);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Kazıma İsteğini Düzenle'),
+        title: const Text('Edit Scraping Request'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -54,12 +73,12 @@ class EditScreenState extends State<EditScreen> {
             TextFormField(
               controller: _titleController,
               decoration: const InputDecoration(
-                labelText: 'İstek Başlığı',
+                labelText: 'Request Title',
                 border: OutlineInputBorder(),
               ),
               validator: (value) {
                 if (value?.isEmpty ?? true) {
-                  return 'Başlık gereklidir';
+                  return 'Title is required';
                 }
                 return null;
               },
@@ -73,7 +92,7 @@ class EditScreenState extends State<EditScreen> {
               ),
               validator: (value) {
                 if (value?.isEmpty ?? true) {
-                  return 'URL gereklidir';
+                  return 'URL is required';
                 }
                 return null;
               },
@@ -106,7 +125,7 @@ class EditScreenState extends State<EditScreen> {
               ),
               validator: (value) {
                 if (value?.isEmpty ?? true) {
-                  return 'Selector gereklidir';
+                  return 'Selector is required';
                 }
                 return null;
               },
@@ -121,7 +140,7 @@ class EditScreenState extends State<EditScreen> {
               keyboardType: TextInputType.number,
               validator: (value) {
                 if (value?.isEmpty ?? true) {
-                  return 'Interval gereklidir';
+                  return 'Interval is required';
                 }
                 return null;
               },
@@ -132,21 +151,16 @@ class EditScreenState extends State<EditScreen> {
               children: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('İptal'),
+                  child: const Text('Cancel'),
                 ),
                 const SizedBox(width: 12),
                 ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState?.validate() ?? false) {
-                      // Save the form
-                      Navigator.pop(context);
-                    }
-                  },
+                  onPressed: _saveChanges,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange,
                     foregroundColor: Colors.white,
                   ),
-                  child: const Text('Düzenle'),
+                  child: const Text('Save'),
                 ),
               ],
             ),

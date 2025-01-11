@@ -3,7 +3,7 @@ import 'dart:convert';
 import '../models/scraping_item.dart';
 
 class ScrapingService {
-  static const String baseUrl = 'http://127.0.0.1:5000';
+  static const String baseUrl = 'http://127.0.0.1:3169';
 
   // Create a scraping request (POST)
   Future<String> createScrapingRequest(ScrapingItem item) async {
@@ -49,4 +49,6 @@ class ScrapingService {
       throw Exception('Failed to get scraping results: ${response.body}');
     }
   }
+
+  updateScrapingItem(ScrapingItem updatedItem) {}
 }

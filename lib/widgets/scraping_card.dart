@@ -5,9 +5,9 @@ class ScrapingCard extends StatelessWidget {
   final ScrapingItem item;
 
   const ScrapingCard({
-    Key? key,
+    super.key,
     required this.item,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
